@@ -20,6 +20,15 @@ public:
     ARoguelikeCharacter(const FObjectInitializer& ObjInit);
     FName GetWeaponRowName() const { return WeaponRowName; };
     bool IsDead() const { return bIsDead; }
+    UFUNCTION(BlueprintCallable, Category = "Animations")
+    float GetMovementDirection() const;
+
+    // returns the Yaw rotation
+    UFUNCTION(BlueprintCallable, Category = "Animations")
+    float GetCursorDirection() const;
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    FVector GetCursorImpactPoint() const;
 
 #pragma region PassiveCharacteristickGetters
     float GetMaxHealth() const { return PassiveCharacteristic.MaxHealth; }
@@ -32,8 +41,7 @@ public:
     float GetDamageAmount() const { return PassiveCharacteristic.Damage; };
     float GetProjectileSpeed() const { return PassiveCharacteristic.ProjectileSpeed; }
 
-    TMap<EAttackEffectChance,int32> GetEffectChances() const { return PassiveCharacteristic.EffectChances; }
-
+    TMap<EAttackEffectChance, int32> GetEffectChances() const { return PassiveCharacteristic.EffectChances; }
 
     float GetMovementSpeed() const { return PassiveCharacteristic.MovementSpeed; }
     float GetReducingSkillsCooldownTime() const { return PassiveCharacteristic.ReducingSkillsCooldownTime; }
@@ -67,9 +75,6 @@ protected:
     virtual void BeginPlay() override;
 
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-    UFUNCTION(BlueprintCallable, Category = "Movement")
-    float GetMovementDirection() const;
 
 private:
     bool bIsMovingForward = false;

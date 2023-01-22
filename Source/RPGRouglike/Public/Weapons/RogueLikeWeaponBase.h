@@ -17,6 +17,7 @@ public:
     virtual void Attack(FAttackData InitAttackData);
 
 protected:
+    USceneComponent* RootComponent;
     virtual void BeginPlay() override;
     FWeaponData WeaponData;
 

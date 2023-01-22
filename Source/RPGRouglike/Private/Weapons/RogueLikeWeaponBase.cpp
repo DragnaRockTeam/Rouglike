@@ -6,6 +6,10 @@ ARogueLikeWeaponBase::ARogueLikeWeaponBase()
 {
     PrimaryActorTick.bCanEverTick = true;
     WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>("Mesh");
+    RootComponent = CreateDefaultSubobject<USceneComponent>("Root");
+
+    SetRootComponent(RootComponent);
+    WeaponMesh->SetupAttachment(RootComponent);
 }
 
 void ARogueLikeWeaponBase::Attack(FAttackData InitAttackData)

@@ -21,8 +21,6 @@ protected:
     virtual bool GetTraceData(FVector& TraceStart, FVector& TraceEnd) const;
     virtual void MakeShot();
     FVector GetMuzzleWorldLocation() const;
-    APlayerController* GetPlayerController() const;
-    bool GetPlayerViewPoint(FVector& ViewLocation, FRotator& ViewRotation) const;
     void MakeHit(FHitResult& HitResult, FVector& TraceStart, FVector& TraceEnd);
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

@@ -2,8 +2,8 @@
 
 #include "Weapons/RogueLikeRangeWeaponBase.h"
 #include "Weapons/RogueLikeProjectileBase.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/Controller.h"
+#include "Character/RoguelikeCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 void ARogueLikeRangeWeaponBase::Attack(FAttackData InitAttackData)
 {
@@ -13,13 +13,16 @@ void ARogueLikeRangeWeaponBase::Attack(FAttackData InitAttackData)
 
 bool ARogueLikeRangeWeaponBase::GetTraceData(FVector& TraceStart, FVector& TraceEnd) const
 {
-    FVector ViewLocation;
-    FRotator ViewRotation;
-    if (!GetPlayerViewPoint(ViewLocation, ViewRotation)) return false;
+    if (!GetWorld()) return false;
+    auto* Character = Cast<ARoguelikeCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    if (!Character) return false;
 
-    TraceStart = ViewLocation;
-    const FVector ShootDirection = ViewRotation.Vector();
+    TraceStart = GetMuzzleWorldLocation();
+    const FVector CursorPosition = Character->GetCursorImpactPoint();
+
+    const FVector ShootDirection = (CursorPosition - TraceStart).GetSafeNormal2D();
     TraceEnd = TraceStart + ShootDirection * 1000.f;
+
     return true;
 }
 
@@ -50,23 +53,6 @@ void ARogueLikeRangeWeaponBase::MakeShot()
 FVector ARogueLikeRangeWeaponBase::GetMuzzleWorldLocation() const
 {
     return WeaponMesh->GetSocketLocation(MuzzleSocketName);
-}
-
-APlayerController* ARogueLikeRangeWeaponBase::GetPlayerController() const
-{
-    const auto Player = Cast<ACharacter>(GetOwner());
-    if (!Player) return nullptr;
-
-    return Player->GetController<APlayerController>();
-}
-
-bool ARogueLikeRangeWeaponBase::GetPlayerViewPoint(FVector& ViewLocation, FRotator& ViewRotation) const
-{
-    const auto Controller = GetPlayerController();
-    if (!Controller) return false;
-
-    Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
-    return true;
 }
 
 void ARogueLikeRangeWeaponBase::MakeHit(FHitResult& HitResult, FVector& TraceStart, FVector& TraceEnd)
