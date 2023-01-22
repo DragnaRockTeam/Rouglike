@@ -18,6 +18,12 @@ enum class EAttackEffect : uint8
     Fire UMETA(DisplayName = "Fire"),
     Poison UMETA(DisplayName = "Poison"),
 };
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+    Melee UMETA(DisplayName = "Melee"),
+    Range UMETA(DisplayName = "Range"),
+};
 
 static const TMap<EAttackEffectChance, FName> EffectsNames = {
     {EAttackEffectChance::Critical, FName("_Critical")},  //
@@ -32,7 +38,13 @@ static const TMap<EAttackEffectChance, TSubclassOf<UDamageType>> EffectsDamageTy
     {EAttackEffectChance::Poison, UDamageType::StaticClass()},   //
     {EAttackEffectChance::Stun, UDamageType::StaticClass()},     //
 };
-
+static const TMap<EAttackEffectChance, int32> DefaultEffectChances = {
+    {EAttackEffectChance::Critical, 0},  //
+    {EAttackEffectChance::Lighing, 0},   //
+    {EAttackEffectChance::Fire, 0},      //
+    {EAttackEffectChance::Poison, 0},    //
+    {EAttackEffectChance::Stun, 0}       //
+};
 struct FEffectData
 {
     FEffectData(){};
@@ -89,7 +101,7 @@ USTRUCT(BlueprintType) struct FPassiveCharacteristic : public FTableRowBase
 
     // 0..100 Chance to deal effect damage
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Characteristic")
-    TMap<EAttackEffectChance, int32> EffectChances;
+    TMap<EAttackEffectChance, int32> EffectChances = DefaultEffectChances;
 
     // Movement speed multiplier, can be only > 1
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Characteristic",
@@ -111,6 +123,8 @@ USTRUCT(BlueprintType) struct FPassiveCharacteristic : public FTableRowBase
 };
 
 class UNiagaraSystem;
+class USoundBase;
+
 /** The structure that defines the appearance and some characteristics of the weapon is necessary
 to create a datatable from which this information will be extracted*/
 USTRUCT(BlueprintType)
@@ -132,6 +146,9 @@ struct FWeaponEffectAttribute : public FTableRowBase
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon attribute")
     UNiagaraSystem* ImpactFX = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon attribute")
+    USoundBase* Audio = nullptr;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon attribute",
         meta = (UIMin = 1.0f, ClampMin = 1.0f, UIMax = 10.f, ClampMax = 10.f))
@@ -176,6 +193,23 @@ struct FAttackData
 };
 
 class ARogueLikeWeaponBase;
+USTRUCT(BlueprintType)
+struct FWeaponCharacteristic
+{
+    GENERATED_USTRUCT_BODY()
+
+    // Can be only >= 1
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon", meta = (UIMin = 1.0f, ClampMin = 1.0f))
+    float BaseDamage = 1.0f;
+
+    // Can be only >= 1
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon", meta = (UIMin = 1.0f, ClampMin = 1.0f))
+    float SpeedMultiplier = 1.0f;
+
+    // 0..100
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+    TMap<EAttackEffectChance, int32> EffectsChanses = DefaultEffectChances;
+};
 
 USTRUCT(BlueprintType)
 struct FWeaponData : public FTableRowBase
@@ -189,25 +223,21 @@ struct FWeaponData : public FTableRowBase
     UMaterialInterface* Material = nullptr;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+    EWeaponType WeaponType = EWeaponType::Melee;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
     TSubclassOf<ARogueLikeWeaponBase> WeaponClass;
 
-    // Can be only >= 1
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon", meta = (UIMin = 1.0f, ClampMin = 1.0f))
-    float BaseDamage = 1.0f;
-
-    // Can be only >= 1
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon", meta = (UIMin = 1.0f, ClampMin = 1.0f))
-    float SpeedMultiplier = 1.0f;
-
-    // 0..100
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
-    TMap<EAttackEffectChance, int32> EffectsChanses;
+    TArray<FWeaponCharacteristic> LevelWeaponCharacteristics;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
     FName WeaponBaseName = "Enter name there";
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
     TArray<UAnimMontage*> Animations;
 };
+
 USTRUCT(BlueprintType)
 struct FUIData
 {
@@ -221,16 +251,44 @@ struct FUIData
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
     FText Desctiprion;
 };
+
 USTRUCT(BlueprintType)
-struct FWeaponUIData : public FTableRowBase
+struct FUITableData : public FTableRowBase
 {
     GENERATED_USTRUCT_BODY()
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI Data")
     FUIData UIData;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
-    FName WeaponName = "Enter name there";
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI Data")
+    FName RowName = "Enter name there";
+};
+
+USTRUCT(BlueprintType)
+struct FCharacterData : public FTableRowBase
+{
+    GENERATED_USTRUCT_BODY()
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Data")
+    USkeletalMesh* SkeletalMesh = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Data")
+    TSubclassOf<UAnimInstance> AnimationClass = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Data")
+    FPassiveCharacteristic StartCharacteristic;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Data")
+    TSubclassOf<AActor> ActiveSkillClass = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Data")
+    TArray<FName> AvalibleWeaponNames;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Data")
+    TArray<FName> StartPassiveCharacteristicPool;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character Data")
+    TArray<FName> StartActiveCharacteristicPool;
 };
 
 template <typename T>

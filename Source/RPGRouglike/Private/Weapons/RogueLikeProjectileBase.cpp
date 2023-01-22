@@ -32,7 +32,7 @@ void ARogueLikeProjectileBase::BeginPlay()
 {
     Super::BeginPlay();
     ProjectileMesh->SetStaticMesh(ProjectileData.Mesh);
-    ProjectileMesh->SetMaterial(0,ProjectileData.Material);
+    ProjectileMesh->SetMaterial(0, ProjectileData.Material);
 
     MovementComponent->InitialSpeed = ProjectileBaseSpeed * ProjectileData.Speed;
     check(MovementComponent);
@@ -41,6 +41,7 @@ void ARogueLikeProjectileBase::BeginPlay()
     MovementComponent->Velocity = ShotDirection * MovementComponent->InitialSpeed;
     CollisionComponent->OnComponentHit.AddDynamic(this, &ThisClass::OnProjecttileHit);
     CollisionComponent->IgnoreActorWhenMoving(GetOwner(), true);
+
     SetLifeSpan(LifeSeconds);
     InitTraceFX();
 }
@@ -48,7 +49,7 @@ void ARogueLikeProjectileBase::BeginPlay()
 void ARogueLikeProjectileBase::OnProjecttileHit(
     UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-    if (!GetWorld()) return;
+    if (!GetWorld() || !OtherActor) return;
 
     MovementComponent->StopMovementImmediately();
     UGameplayStatics::ApplyDamage(OtherActor, ProjectileData.Damage, GetController(), GetOwner(), ProjectileData.DamageType);
@@ -86,10 +87,10 @@ AController* ARogueLikeProjectileBase::GetController() const
 UNiagaraComponent* ARogueLikeProjectileBase::SpawnTraceFX()
 {
     return UNiagaraFunctionLibrary::SpawnSystemAttached(ProjectileData.TraceFX,  //
-        ProjectileMesh,                                                                    //
-        ProjectileSocketName,                                                              //
-        FVector::ZeroVector,                                                               //
-        FRotator::ZeroRotator,                                                             //
-        EAttachLocation::SnapToTarget,                                                     //
+        ProjectileMesh,                                                          //
+        ProjectileSocketName,                                                    //
+        FVector::ZeroVector,                                                     //
+        FRotator::ZeroRotator,                                                   //
+        EAttachLocation::SnapToTarget,                                           //
         true);
 }

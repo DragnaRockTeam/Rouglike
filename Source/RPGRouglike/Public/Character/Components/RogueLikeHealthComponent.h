@@ -7,7 +7,7 @@
 #include "RogueLikeCoreTypes.h"
 #include "RoguelikeHealthComponent.generated.h"
 
-class ARoguelikeCharacter;
+class ARogueLikeCharacter;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class RPGROUGLIKE_API URogueLikeHealthComponent : public UActorComponent
@@ -46,7 +46,7 @@ private:
     float RegenerationRate = 0.0f;
 
     FTimerHandle HealTimerHandle;
-    ARoguelikeCharacter* Owner;
+    ARogueLikeCharacter* Owner;
 
     UFUNCTION()
     void OnTakeAnyDamageHandle(AActor* DamagedActor, float Damage, const class UDamageType* DamageType,
@@ -57,4 +57,5 @@ private:
 
     void HealUpdate();
     void SetHealth(float NewHealth);
+    friend class ARogueLikeCharacter;
 };

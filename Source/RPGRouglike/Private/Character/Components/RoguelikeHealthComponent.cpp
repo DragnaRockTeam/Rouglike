@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Character/Components/RogueLikeHealthComponent.h"
-#include "Character/RoguelikeCharacter.h"
+#include "Character/RogueLikeCharacter.h"
 
 URogueLikeHealthComponent::URogueLikeHealthComponent()
 {
@@ -17,10 +17,8 @@ void URogueLikeHealthComponent::BeginPlay()
 {
     Super::BeginPlay();
 
-    Owner = Cast<ARoguelikeCharacter>(GetOwner());
+    Owner = Cast<ARogueLikeCharacter>(GetOwner());
     check(Owner);
-    checkf(Owner->GetMaxHealth() > 0, TEXT("Max health couldn't be less or equal 0"));
-    SetHealth(Owner->GetMaxHealth());
 
     Owner->OnTakeAnyDamage.AddDynamic(this, &ThisClass::OnTakeAnyDamageHandle);
     Owner->OnPassiveCharacteristicUpdated.AddDynamic(this, &ThisClass::UpdateHealRate);

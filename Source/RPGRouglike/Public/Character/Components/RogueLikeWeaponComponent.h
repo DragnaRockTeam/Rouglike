@@ -7,9 +7,8 @@
 #include "RogueLikeCoreTypes.h"
 #include "RogueLikeWeaponComponent.generated.h"
 
-
 class ARogueLikeWeaponBase;
-class ARoguelikeCharacter;
+class ARogueLikeCharacter;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class RPGROUGLIKE_API URogueLikeWeaponComponent : public UActorComponent
@@ -34,9 +33,12 @@ protected:
     UDataTable* WeaponEffectAttributeDataTable;
 
 private:
+    FWeaponCharacteristic* WeaponCharacteristic;
     FWeaponData* WeaponData;
+    // Can be only > 1
+    int32 WeaponLevel = 1;
 
-    ARoguelikeCharacter* Character;
+    ARogueLikeCharacter* Character;
     bool bIsAnimOnProgress = false;
     bool bIsNextAttackCritical = false;
 

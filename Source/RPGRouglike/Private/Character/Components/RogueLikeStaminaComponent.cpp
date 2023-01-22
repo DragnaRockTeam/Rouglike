@@ -2,7 +2,7 @@
 
 #include "Character/Components/RogueLikeStaminaComponent.h"
 #include "Character/Components/RoguelikeHealthComponent.h"
-#include "Character/RoguelikeCharacter.h"
+#include "Character/RogueLikeCharacter.h"
 
 URogueLikeStaminaComponent::URogueLikeStaminaComponent()
 {
@@ -36,11 +36,8 @@ void URogueLikeStaminaComponent::StopRunning()
 void URogueLikeStaminaComponent::BeginPlay()
 {
     Super::BeginPlay();
-    Owner = Cast<ARoguelikeCharacter>(GetOwner());
+    Owner = Cast<ARogueLikeCharacter>(GetOwner());
     check(Owner);
-    checkf(Owner->GetMaxStamina() > 0, TEXT("Max Stamina couldn't be less or equal 0"));
-
-    SetStamina(Owner->GetMaxHealth());
 
     Owner->OnPassiveCharacteristicUpdated.AddDynamic(this, &ThisClass::UpdateRegenerationRate);
 }

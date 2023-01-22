@@ -1,21 +1,22 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Character/RoguelikeCharacter.h"
+#include "Character/RogueLikeCharacter.h"
 #include "GameFramework/Controller.h"
 #include "Components/InputComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "Character/Components/RogueLikeMovementComponent.h"
 #include "Character/Components/RogueLikeHealthComponent.h"
 #include "Character/Components/RogueLikeStaminaComponent.h"
 #include "Character/Components/RogueLikeWeaponComponent.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "Kismet/GameplayStatics.h"
+#include "RogueLikeGameInstance.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogCharacter, All, All);
 
-ARoguelikeCharacter::ARoguelikeCharacter(const FObjectInitializer& ObjInit)
+ARogueLikeCharacter::ARogueLikeCharacter(const FObjectInitializer& ObjInit)
     : Super(ObjInit.SetDefaultSubobjectClass<URogueLikeMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
     PrimaryActorTick.bCanEverTick = false;
@@ -25,50 +26,67 @@ ARoguelikeCharacter::ARoguelikeCharacter(const FObjectInitializer& ObjInit)
     WeaponComponent = CreateDefaultSubobject<URogueLikeWeaponComponent>("WeaponComponent");
 }
 
-void ARoguelikeCharacter::AddPassiveCharacteristic(const FPassiveCharacteristic* AddCharacteristic)
+void ARogueLikeCharacter::AddPassiveCharacteristic(const FPassiveCharacteristic* AddCharacteristic)
 {
-    PassiveCharacteristic.MaxHealth = FMath::Clamp(PassiveCharacteristic.MaxHealth + AddCharacteristic->MaxHealth, 1.0f, 10000.0f);
-    PassiveCharacteristic.MaxStamina = FMath::Clamp(PassiveCharacteristic.MaxStamina + AddCharacteristic->MaxStamina, 1.0f, 10000.0f);
+    PassiveCharacteristic->MaxHealth = FMath::Clamp(PassiveCharacteristic->MaxHealth + AddCharacteristic->MaxHealth, 1.0f, 10000.0f);
+    PassiveCharacteristic->MaxStamina = FMath::Clamp(PassiveCharacteristic->MaxStamina + AddCharacteristic->MaxStamina, 1.0f, 10000.0f);
 
-    PassiveCharacteristic.AttackSpeed = FMath::Clamp(PassiveCharacteristic.AttackSpeed + AddCharacteristic->AttackSpeed, 1.0f, 10.0f);
-    PassiveCharacteristic.Damage = FMath::Clamp(PassiveCharacteristic.Damage + AddCharacteristic->Damage, 0.0f, 10000.f);
-    PassiveCharacteristic.DamageResistance = FMath::Clamp(PassiveCharacteristic.AttackSpeed + AddCharacteristic->AttackSpeed, 0.0f, 1.0f);
+    PassiveCharacteristic->AttackSpeed = FMath::Clamp(PassiveCharacteristic->AttackSpeed + AddCharacteristic->AttackSpeed, 1.0f, 10.0f);
+    PassiveCharacteristic->Damage = FMath::Clamp(PassiveCharacteristic->Damage + AddCharacteristic->Damage, 0.0f, 10000.f);
+    PassiveCharacteristic->DamageResistance = FMath::Clamp(PassiveCharacteristic->AttackSpeed + AddCharacteristic->AttackSpeed, 0.0f, 1.0f);
 
-    PassiveCharacteristic.HealthRegeneration =
-        FMath::Clamp(PassiveCharacteristic.HealthRegeneration + AddCharacteristic->HealthRegeneration, 0.0f, 100.0f);
-    PassiveCharacteristic.StaminaRegeneration =
-        FMath::Clamp(PassiveCharacteristic.StaminaRegeneration + AddCharacteristic->StaminaRegeneration, 0.0f, 100.0f);
-    PassiveCharacteristic.MovementSpeed = FMath::Clamp(PassiveCharacteristic.MovementSpeed + AddCharacteristic->MovementSpeed, 1.0f, 10.0f);
+    PassiveCharacteristic->HealthRegeneration =
+        FMath::Clamp(PassiveCharacteristic->HealthRegeneration + AddCharacteristic->HealthRegeneration, 0.0f, 100.0f);
+    PassiveCharacteristic->StaminaRegeneration =
+        FMath::Clamp(PassiveCharacteristic->StaminaRegeneration + AddCharacteristic->StaminaRegeneration, 0.0f, 100.0f);
+    PassiveCharacteristic->MovementSpeed =
+        FMath::Clamp(PassiveCharacteristic->MovementSpeed + AddCharacteristic->MovementSpeed, 1.0f, 10.0f);
 
-    for (const auto& EffectPair : PassiveCharacteristic.EffectChances)
+    for (const auto& EffectPair : PassiveCharacteristic->EffectChances)
     {
-        PassiveCharacteristic.EffectChances[EffectPair.Key] =
+        PassiveCharacteristic->EffectChances[EffectPair.Key] =
             FMath::Clamp(EffectPair.Value + AddCharacteristic->EffectChances[EffectPair.Key], 0, 100);
     }
-    for (const auto& EffectPair : PassiveCharacteristic.EffectsDamages)
+    for (const auto& EffectPair : PassiveCharacteristic->EffectsDamages)
     {
-        PassiveCharacteristic.EffectsDamages[EffectPair.Key] =
+        PassiveCharacteristic->EffectsDamages[EffectPair.Key] =
             FMath::Clamp(EffectPair.Value + AddCharacteristic->EffectsDamages[EffectPair.Key], 0.0f, 10000.0f);
     }
 
-    PassiveCharacteristic.ProjectileSpeed =
-        FMath::Clamp(PassiveCharacteristic.ProjectileSpeed + AddCharacteristic->ProjectileSpeed, 1.0f, 10000.0f);
-    PassiveCharacteristic.ReducingSkillsCooldownTime += AddCharacteristic->ReducingSkillsCooldownTime;
+    PassiveCharacteristic->ProjectileSpeed =
+        FMath::Clamp(PassiveCharacteristic->ProjectileSpeed + AddCharacteristic->ProjectileSpeed, 1.0f, 10000.0f);
+    PassiveCharacteristic->ReducingSkillsCooldownTime += AddCharacteristic->ReducingSkillsCooldownTime;
 
     OnPassiveCharacteristicUpdated.Broadcast();
-    checkf(CheckPassiveCharacteristic(PassiveCharacteristic), TEXT("PassiveCharacteristic is not valid"));
+    checkf(CheckPassiveCharacteristic(*PassiveCharacteristic), TEXT("PassiveCharacteristic is not valid"));
 }
 
-void ARoguelikeCharacter::BeginPlay()
+void ARogueLikeCharacter::InitCharacterData()
+{
+    const auto GameInst = Cast<URogueLikeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
+    checkf(GameInst, TEXT("GameInst is not valid. GameInst should be child of URogueLikeGameInstance"));
+    CharacterData = GameInst->GetCharacterData();
+    check(CharacterData);
+    PassiveCharacteristic = &CharacterData->StartCharacteristic;
+
+    GetMesh()->SetSkeletalMesh(CharacterData->SkeletalMesh);
+    GetMesh()->SetAnimInstanceClass(CharacterData->AnimationClass);
+}
+
+void ARogueLikeCharacter::BeginPlay()
 {
     Super::BeginPlay();
-    UE_LOG(LogCharacter, All, TEXT("%s has valid characteristic: %s"), *GetName(),
-        (CheckPassiveCharacteristic(PassiveCharacteristic) ? TEXT("true") : TEXT("false")));
+    InitCharacterData();
 
+    UE_LOG(LogCharacter, All, TEXT("%s has valid characteristic: %s"), *GetName(),
+        (CheckPassiveCharacteristic(*PassiveCharacteristic) ? TEXT("true") : TEXT("false")));
+
+    HealthComponent->SetHealth(GetMaxHealth());
+    StaminaComponent->SetStamina(GetMaxStamina());
     HealthComponent->OnDeath.AddDynamic(this, &ThisClass::OnDeath);
 }
 
-void ARoguelikeCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ARogueLikeCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
     PlayerInputComponent->BindAction("Run", IE_Pressed, this, &ThisClass::Run);
@@ -81,7 +99,7 @@ void ARoguelikeCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
     PlayerInputComponent->BindAxis("MoveRight", this, &ThisClass::MoveRight);
 }
 
-void ARoguelikeCharacter::MoveForward(float Value)
+void ARogueLikeCharacter::MoveForward(float Value)
 {
     if (!Controller) return;
     if (Value == 0.0f) return;
@@ -90,7 +108,7 @@ void ARoguelikeCharacter::MoveForward(float Value)
     AddMovementInput(GetActorForwardVector(), Value);
 }
 
-void ARoguelikeCharacter::MoveRight(float Value)
+void ARogueLikeCharacter::MoveRight(float Value)
 {
     if (!Controller) return;
     if (Value == 0.0f) return;
@@ -98,7 +116,7 @@ void ARoguelikeCharacter::MoveRight(float Value)
     AddMovementInput(GetActorRightVector(), Value);
 }
 
-void ARoguelikeCharacter::Run()
+void ARogueLikeCharacter::Run()
 {
     if (StaminaComponent->CanRun())
     {
@@ -108,19 +126,19 @@ void ARoguelikeCharacter::Run()
     }
 }
 
-void ARoguelikeCharacter::StopRunning()
+void ARogueLikeCharacter::StopRunning()
 {
     bIsRunning = false;
     StaminaComponent->StopRunning();
     StaminaComponent->OnStaminaConsumed.RemoveDynamic(this, &ThisClass::StopRunning);
 }
 
-bool ARoguelikeCharacter::IsRunning() const
+bool ARogueLikeCharacter::IsRunning() const
 {
     return bIsRunning && !GetVelocity().IsZero() && bIsMovingForward;
 }
 
-float ARoguelikeCharacter::GetMovementDirection() const
+float ARogueLikeCharacter::GetMovementDirection() const
 {
     if (GetVelocity().IsZero()) return 0.0f;
 
@@ -132,12 +150,12 @@ float ARoguelikeCharacter::GetMovementDirection() const
     return CrossProduct.IsZero() ? Degrees : Degrees * FMath::Sign(CrossProduct.Z);
 }
 
-float ARoguelikeCharacter::GetCursorDirection() const
+float ARogueLikeCharacter::GetCursorDirection() const
 {
     return (UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), GetCursorImpactPoint())).Yaw;
 }
 
-FVector ARoguelikeCharacter::GetCursorImpactPoint() const
+FVector ARogueLikeCharacter::GetCursorImpactPoint() const
 {
     if (!GetWorld()) return FVector();
     auto* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
@@ -149,7 +167,7 @@ FVector ARoguelikeCharacter::GetCursorImpactPoint() const
     return HitResult.ImpactPoint;
 }
 
-void ARoguelikeCharacter::OnDeath()
+void ARogueLikeCharacter::OnDeath()
 {
     bIsDead = true;
     GetCharacterMovement()->DisableMovement();

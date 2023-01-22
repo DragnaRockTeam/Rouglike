@@ -12,12 +12,12 @@ class URogueLikeStaminaComponent;
 class URogueLikeWeaponComponent;
 
 UCLASS()
-class RPGROUGLIKE_API ARoguelikeCharacter : public ACharacter
+class RPGROUGLIKE_API ARogueLikeCharacter : public ACharacter
 {
     GENERATED_BODY()
 
 public:
-    ARoguelikeCharacter(const FObjectInitializer& ObjInit);
+    ARogueLikeCharacter(const FObjectInitializer& ObjInit);
     FName GetWeaponRowName() const { return WeaponRowName; };
     bool IsDead() const { return bIsDead; }
     UFUNCTION(BlueprintCallable, Category = "Animations")
@@ -31,26 +31,28 @@ public:
     FVector GetCursorImpactPoint() const;
 
 #pragma region PassiveCharacteristickGetters
-    float GetMaxHealth() const { return PassiveCharacteristic.MaxHealth; }
-    float GetHealthRegenerationRate() const { return PassiveCharacteristic.HealthRegeneration; }
-    float GetMaxStamina() const { return PassiveCharacteristic.MaxStamina; }
-    float GetStaminaRegenerationRate() const { return PassiveCharacteristic.StaminaRegeneration; }
-    float GetDamageResistance() const { return PassiveCharacteristic.DamageResistance; }
+    float GetMaxHealth() const { return PassiveCharacteristic->MaxHealth; }
+    float GetHealthRegenerationRate() const { return PassiveCharacteristic->HealthRegeneration; }
+    float GetMaxStamina() const { return PassiveCharacteristic->MaxStamina; }
+    float GetStaminaRegenerationRate() const { return PassiveCharacteristic->StaminaRegeneration; }
+    float GetDamageResistance() const { return PassiveCharacteristic->DamageResistance; }
 
-    float GetAttackSpeed() const { return PassiveCharacteristic.AttackSpeed; }
-    float GetDamageAmount() const { return PassiveCharacteristic.Damage; };
-    float GetProjectileSpeed() const { return PassiveCharacteristic.ProjectileSpeed; }
+    float GetAttackSpeed() const { return PassiveCharacteristic->AttackSpeed; }
+    float GetDamageAmount() const { return PassiveCharacteristic->Damage; };
+    float GetProjectileSpeed() const { return PassiveCharacteristic->ProjectileSpeed; }
 
-    TMap<EAttackEffectChance, int32> GetEffectChances() const { return PassiveCharacteristic.EffectChances; }
+    TMap<EAttackEffectChance, int32> GetEffectChances() const { return PassiveCharacteristic->EffectChances; }
 
-    float GetMovementSpeed() const { return PassiveCharacteristic.MovementSpeed; }
-    float GetReducingSkillsCooldownTime() const { return PassiveCharacteristic.ReducingSkillsCooldownTime; }
-    TMap<EAttackEffect, float> GetEffectsDamages() const { return PassiveCharacteristic.EffectsDamages; }
+    float GetMovementSpeed() const { return PassiveCharacteristic->MovementSpeed; }
+    float GetReducingSkillsCooldownTime() const { return PassiveCharacteristic->ReducingSkillsCooldownTime; }
+    TMap<EAttackEffect, float> GetEffectsDamages() const { return PassiveCharacteristic->EffectsDamages; }
 
-    float GetVampirismPrecent() const { return PassiveCharacteristic.VampirismPrecent; }
+    float GetVampirismPrecent() const { return PassiveCharacteristic->VampirismPrecent; }
 #pragma endregion
 
     void AddPassiveCharacteristic(const FPassiveCharacteristic* AddCharacteristic);
+    void InitCharacterData();
+
     UFUNCTION(BlueprintCallable, Category = "Movement")
     bool IsRunning() const;
 
@@ -58,14 +60,12 @@ public:
     FOnPassiveCharacteristicUpdated OnPassiveCharacteristicUpdated;
 
 protected:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Characteristic")
-    FPassiveCharacteristic PassiveCharacteristic;
-
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
     FName WeaponRowName;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
     URogueLikeWeaponComponent* WeaponComponent;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
     URogueLikeHealthComponent* HealthComponent;
 
@@ -77,6 +77,9 @@ protected:
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+    FCharacterData* CharacterData;
+    FPassiveCharacteristic* PassiveCharacteristic;
+
     bool bIsMovingForward = false;
     bool bIsRunning = false;
     bool bIsDead = false;

@@ -7,7 +7,7 @@
 #include "RogueLikeCoreTypes.h"
 #include "RogueLikeStaminaComponent.generated.h"
 
-class ARoguelikeCharacter;
+class ARogueLikeCharacter;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class RPGROUGLIKE_API URogueLikeStaminaComponent : public UActorComponent
@@ -45,12 +45,12 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina properties")
     float RegenerationDelay = 5.f;
 
-    //Can be only > 0
+    // Can be only > 0
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina properties",
         meta = (ClampMin = 0.f, ClampMax = 999.f, UIMin = 0.f, UIMax = 999.f))
     float RegenerationModifire = 5.f;
 
-    //Can be only > 0
+    // Can be only > 0
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina properties",
         meta = (ClampMin = 0.f, ClampMax = 999.f, UIMin = 0.f, UIMax = 999.f))
     float ConsumptionModifire = 5.f;
@@ -66,7 +66,7 @@ private:
 
     FTimerHandle RegenerationTimerHandle;
     FTimerHandle ReduceTimerHandle;
-    ARoguelikeCharacter* Owner;
+    ARogueLikeCharacter* Owner;
 
     UFUNCTION()
     void UpdateRegenerationRate();
@@ -74,4 +74,5 @@ private:
     void StaminaRegeneration();
     void StaminaConsumption();
     void SetStamina(const float NewStamina);
+    friend class ARogueLikeCharacter;
 };

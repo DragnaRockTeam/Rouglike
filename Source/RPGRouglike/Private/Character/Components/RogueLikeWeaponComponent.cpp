@@ -5,7 +5,9 @@
 #include "GameFramework/Character.h"
 #include "Animations/AnimUtils.h"
 #include "Animations/RogueLikeAttackEndAnimNotify.h"
-#include "Character/RoguelikeCharacter.h"
+#include "Character/RogueLikeCharacter.h"
+#include "RogueLikeGameInstance.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogWeaponComponent, All, All);
 
@@ -17,8 +19,9 @@ URogueLikeWeaponComponent::URogueLikeWeaponComponent()
 void URogueLikeWeaponComponent::BeginPlay()
 {
     Super::BeginPlay();
+    if (!GetWorld()) return;
 
-    Character = Cast<ARoguelikeCharacter>(GetOwner());
+    Character = Cast<ARogueLikeCharacter>(GetOwner());
     if (!Character) return;
     check(WeaponEffectAttributeDataTable);
     check(WeaponDataTable);
@@ -26,6 +29,15 @@ void URogueLikeWeaponComponent::BeginPlay()
     WeaponData = WeaponDataTable->FindRow<FWeaponData>(Character->GetWeaponRowName(), TEXT("Weapon Context"));
     check(WeaponData);
 
+    const auto GameInst = Cast<URogueLikeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
+    checkf(GameInst, TEXT("GameInst is not valid. GameInst should be child of URogueLikeGameInstance"));
+
+    WeaponLevel = GameInst->GetWeaponLevel();
+    checkf(WeaponLevel > 0 && WeaponLevel - 1 < WeaponData->LevelWeaponCharacteristics.Num(),
+        TEXT("The weapon level is not valid current weapon level: %d Current weapon levels: %d"), WeaponLevel,
+        WeaponData->LevelWeaponCharacteristics.Num());
+
+    WeaponCharacteristic = &WeaponData->LevelWeaponCharacteristics[WeaponLevel - 1];
     SpawnWeapon();
 }
 
@@ -80,15 +92,17 @@ FAttackData URogueLikeWeaponComponent::GetAttackData()
         UE_LOG(LogWeaponComponent, Error, TEXT("Can't find effect attribute by row name: %s"), *RowName.ToString());
         return FAttackData();
     }
-    AttackData.Damage = EffectAttribute->DamageMultiplier * (WeaponData->BaseDamage + Character->GetDamageAmount()) *
+
+    AttackData.Damage = EffectAttribute->DamageMultiplier * (WeaponCharacteristic->BaseDamage + Character->GetDamageAmount()) *
                         (bIsNextAttackCritical && EffectAttribute->CanBeCritical ? 1.5f : 1.0f);
     AttackData.DamageType = EffectData.DamageType;
     AttackData.ImpactFX = EffectAttribute->ImpactFX;
     AttackData.Material = EffectAttribute->Material;
     AttackData.Mesh = EffectAttribute->Mesh;
-    AttackData.Speed = EffectAttribute->SpeedMultiplier * WeaponData->SpeedMultiplier * Character->GetProjectileSpeed();
+    AttackData.Speed = EffectAttribute->SpeedMultiplier * WeaponCharacteristic->SpeedMultiplier * Character->GetProjectileSpeed();
     AttackData.TraceFX = EffectAttribute->TraceFX;
 
+    UGameplayStatics::PlaySound2D(GetWorld(), EffectAttribute->Audio);
     return AttackData;
 }
 
@@ -98,7 +112,7 @@ FEffectData URogueLikeWeaponComponent::GetAttackEffectData()
     check(WeaponData);
     for (const auto& EffectPair : Character->GetEffectChances())
     {
-        EffectChances.Add(EffectPair.Key,WeaponData->EffectsChanses[EffectPair.Key] + EffectPair.Value);
+        EffectChances.Add(EffectPair.Key, WeaponCharacteristic->EffectsChanses[EffectPair.Key] + EffectPair.Value);
     }
     bIsNextAttackCritical = (EffectChances[EAttackEffectChance::Critical] >= FMath::RandRange(0, 100));
     EffectChances.Remove(EAttackEffectChance::Critical);
@@ -134,7 +148,7 @@ void URogueLikeWeaponComponent::AttachWeaponToSocket(
 
 void URogueLikeWeaponComponent::PlayAnimMontage(UAnimMontage* Animation)
 {
-    if(Character) Character->PlayAnimMontage(Animation, Character->GetAttackSpeed() * WeaponData->SpeedMultiplier);
+    if (Character) Character->PlayAnimMontage(Animation, Character->GetAttackSpeed() * WeaponCharacteristic->SpeedMultiplier);
 }
 
 void URogueLikeWeaponComponent::InitAttackLoop()

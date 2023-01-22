@@ -14,7 +14,7 @@ void ARogueLikeRangeWeaponBase::Attack(FAttackData InitAttackData)
 bool ARogueLikeRangeWeaponBase::GetTraceData(FVector& TraceStart, FVector& TraceEnd) const
 {
     if (!GetWorld()) return false;
-    auto* Character = Cast<ARoguelikeCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    auto* Character = Cast<ARogueLikeCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     if (!Character) return false;
 
     TraceStart = GetMuzzleWorldLocation();
