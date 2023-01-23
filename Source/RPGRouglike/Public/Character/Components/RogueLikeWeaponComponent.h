@@ -19,6 +19,7 @@ public:
     URogueLikeWeaponComponent();
     void StartAttack();
     void StopAttack();
+    UMaterialInterface* GetTrailMaterial() const { return CurrentTrailMaterial; }
 
 protected:
     virtual void BeginPlay() override;
@@ -33,8 +34,9 @@ protected:
     UDataTable* WeaponEffectAttributeDataTable;
 
 private:
-    FWeaponCharacteristic* WeaponCharacteristic;
-    FWeaponData* WeaponData;
+    UMaterialInterface* CurrentTrailMaterial;
+    FWeaponCharacteristic WeaponCharacteristic;
+    FWeaponData WeaponData;
     // Can be only > 1
     int32 WeaponLevel = 1;
 

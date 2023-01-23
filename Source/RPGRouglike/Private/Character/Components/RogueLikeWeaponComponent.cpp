@@ -26,31 +26,32 @@ void URogueLikeWeaponComponent::BeginPlay()
     check(WeaponEffectAttributeDataTable);
     check(WeaponDataTable);
 
-    WeaponData = WeaponDataTable->FindRow<FWeaponData>(Character->GetWeaponRowName(), TEXT("Weapon Context"));
-    check(WeaponData);
+    WeaponData = *WeaponDataTable->FindRow<FWeaponData>(Character->GetWeaponRowName(), TEXT("Weapon Context"));
 
     const auto GameInst = Cast<URogueLikeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
     checkf(GameInst, TEXT("GameInst is not valid. GameInst should be child of URogueLikeGameInstance"));
 
     WeaponLevel = GameInst->GetWeaponLevel();
-    checkf(WeaponLevel > 0 && WeaponLevel - 1 < WeaponData->LevelWeaponCharacteristics.Num(),
+    checkf(WeaponLevel > 0 && WeaponLevel - 1 < WeaponData.LevelWeaponCharacteristics.Num(),
         TEXT("The weapon level is not valid current weapon level: %d Current weapon levels: %d"), WeaponLevel,
-        WeaponData->LevelWeaponCharacteristics.Num());
+        WeaponData.LevelWeaponCharacteristics.Num());
 
-    WeaponCharacteristic = &WeaponData->LevelWeaponCharacteristics[WeaponLevel - 1];
+    WeaponCharacteristic = WeaponData.LevelWeaponCharacteristics[WeaponLevel - 1];
     SpawnWeapon();
+    checkf(WeaponData.Animations.Num() > 0, TEXT("Animations doesn't set, Weapon Row name: %s"),  //
+        *Character->GetWeaponRowName().ToString());
 }
 
 void URogueLikeWeaponComponent::StartAttack()
 {
     if (!CanAttack()) return;
     InitAttackLoop();
-    PlayAnimMontage(WeaponData->Animations[CurrentAttackAnimationIndex]);
+    PlayAnimMontage(WeaponData.Animations[CurrentAttackAnimationIndex]);
 }
 
 void URogueLikeWeaponComponent::StopAttack()
 {
-    for (const auto& Animation : WeaponData->Animations)
+    for (const auto& Animation : WeaponData.Animations)
     {
         auto AttackEnd = AnimUtils::FindNotifyByClass<URogueLikeAttackEndAnimNotify>(Animation);
 
@@ -73,17 +74,17 @@ void URogueLikeWeaponComponent::Attack()
 
     Weapon->Attack(GetAttackData());
     bIsNextAttackCritical = false;
-    PlayAnimMontage(WeaponData->Animations[CurrentAttackAnimationIndex]);
+    PlayAnimMontage(WeaponData.Animations[CurrentAttackAnimationIndex]);
 }
 
 FAttackData URogueLikeWeaponComponent::GetAttackData()
 {
-    check(WeaponData);
+    check(&WeaponData);
 
     FAttackData AttackData;
     FEffectData EffectData = GetAttackEffectData();
 
-    FName RowName = *((WeaponData->WeaponBaseName).ToString() + (EffectData.EffectName).ToString());
+    FName RowName = *((WeaponData.WeaponBaseName).ToString() + (EffectData.EffectName).ToString());
     FWeaponEffectAttribute* EffectAttribute =
         WeaponEffectAttributeDataTable->FindRow<FWeaponEffectAttribute>(RowName, TEXT("Effect Context"));
 
@@ -93,14 +94,15 @@ FAttackData URogueLikeWeaponComponent::GetAttackData()
         return FAttackData();
     }
 
-    AttackData.Damage = EffectAttribute->DamageMultiplier * (WeaponCharacteristic->BaseDamage + Character->GetDamageAmount()) *
+    AttackData.Damage = EffectAttribute->DamageMultiplier * (WeaponCharacteristic.BaseDamage + Character->GetDamageAmount()) *
                         (bIsNextAttackCritical && EffectAttribute->CanBeCritical ? 1.5f : 1.0f);
     AttackData.DamageType = EffectData.DamageType;
     AttackData.ImpactFX = EffectAttribute->ImpactFX;
-    AttackData.Material = EffectAttribute->Material;
+    AttackData.Material = EffectAttribute->ProjectileMaterial;
     AttackData.Mesh = EffectAttribute->Mesh;
-    AttackData.Speed = EffectAttribute->SpeedMultiplier * WeaponCharacteristic->SpeedMultiplier * Character->GetProjectileSpeed();
+    AttackData.Speed = EffectAttribute->SpeedMultiplier * WeaponCharacteristic.SpeedMultiplier * Character->GetProjectileSpeed();
     AttackData.TraceFX = EffectAttribute->TraceFX;
+    CurrentTrailMaterial = EffectAttribute->TrailMaterial;
 
     UGameplayStatics::PlaySound2D(GetWorld(), EffectAttribute->Audio);
     return AttackData;
@@ -109,17 +111,16 @@ FAttackData URogueLikeWeaponComponent::GetAttackData()
 FEffectData URogueLikeWeaponComponent::GetAttackEffectData()
 {
     TMap<EAttackEffectChance, int32> EffectChances;
-    check(WeaponData);
     for (const auto& EffectPair : Character->GetEffectChances())
     {
-        EffectChances.Add(EffectPair.Key, WeaponCharacteristic->EffectsChanses[EffectPair.Key] + EffectPair.Value);
+        EffectChances.Add(EffectPair.Key, WeaponCharacteristic.EffectsChanses[EffectPair.Key] + EffectPair.Value);
     }
     bIsNextAttackCritical = (EffectChances[EAttackEffectChance::Critical] >= FMath::RandRange(0, 100));
     EffectChances.Remove(EAttackEffectChance::Critical);
 
     for (const auto& EffectPair : EffectChances)
     {
-        if (EffectPair.Value >= FMath::RandRange(0, 100))
+        if (EffectPair.Value > FMath::RandRange(0, 100))
             return FEffectData(EffectsNames[EffectPair.Key], EffectsDamageTypes[EffectPair.Key]);
     }
 
@@ -130,9 +131,9 @@ void URogueLikeWeaponComponent::SpawnWeapon()
 {
     if (!GetWorld()) return;
 
-    Weapon = GetWorld()->SpawnActorDeferred<ARogueLikeWeaponBase>(WeaponData->WeaponClass, FTransform(), GetOwner());
+    Weapon = GetWorld()->SpawnActorDeferred<ARogueLikeWeaponBase>(WeaponData.WeaponClass, FTransform(), GetOwner());
     check(Weapon);
-    Weapon->Init(*WeaponData);
+    Weapon->Init(WeaponData);
     Weapon->FinishSpawning(FTransform());
 
     AttachWeaponToSocket(Weapon, Character->GetMesh(), WeaponGripSocketName);
@@ -148,12 +149,12 @@ void URogueLikeWeaponComponent::AttachWeaponToSocket(
 
 void URogueLikeWeaponComponent::PlayAnimMontage(UAnimMontage* Animation)
 {
-    if (Character) Character->PlayAnimMontage(Animation, Character->GetAttackSpeed() * WeaponCharacteristic->SpeedMultiplier);
+    if (Character) Character->PlayAnimMontage(Animation, Character->GetAttackSpeed() * WeaponCharacteristic.SpeedMultiplier);
 }
 
 void URogueLikeWeaponComponent::InitAttackLoop()
 {
-    for (const auto& Animation : WeaponData->Animations)
+    for (const auto& Animation : WeaponData.Animations)
     {
         auto AttackEnd = AnimUtils::FindNotifyByClass<URogueLikeAttackEndAnimNotify>(Animation);
 
@@ -182,5 +183,5 @@ bool URogueLikeWeaponComponent::CanAttack() const
 
 void URogueLikeWeaponComponent::NextAnimationIndex()
 {
-    CurrentAttackAnimationIndex = (CurrentAttackAnimationIndex + 1) % WeaponData->Animations.Num();
+    CurrentAttackAnimationIndex = (CurrentAttackAnimationIndex + 1) % WeaponData.Animations.Num();
 }

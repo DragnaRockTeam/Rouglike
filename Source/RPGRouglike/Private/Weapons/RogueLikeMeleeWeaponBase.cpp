@@ -41,37 +41,9 @@ void ARogueLikeMeleeWeaponBase::OnBeginOverlap(UPrimitiveComponent* OverlappedCo
     FXComponent->PlayImpactFX(SweepResult, AttackData.ImpactFX);
     WeaponMesh->SetMaterial(0, WeaponData.Material);
 }
-void ARogueLikeMeleeWeaponBase::InitTraceFX()
-{
-    if (!TraceFXComponent)
-    {
-        TraceFXComponent = SpawnTraceFX();
-    }
-    SetTraceFXVisibility(true);
-}
-
-void ARogueLikeMeleeWeaponBase::SetTraceFXVisibility(bool bVisible)
-{
-    if (TraceFXComponent)
-    {
-        TraceFXComponent->SetPaused(!bVisible);
-        TraceFXComponent->SetVisibility(bVisible, true);
-    }
-}
 
 AController* ARogueLikeMeleeWeaponBase::GetController() const
 {
     const auto Pawn = Cast<APawn>(GetOwner());
     return Pawn ? Pawn->GetController() : nullptr;
-}
-
-UNiagaraComponent* ARogueLikeMeleeWeaponBase::SpawnTraceFX()
-{
-    return UNiagaraFunctionLibrary::SpawnSystemAttached(AttackData.TraceFX,  //
-        WeaponMesh,                                                          //
-        WeaponSocketName,                                                    //
-        FVector::ZeroVector,                                                 //
-        FRotator::ZeroRotator,                                               //
-        EAttachLocation::SnapToTarget,                                       //
-        true);
 }

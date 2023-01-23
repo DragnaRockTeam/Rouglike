@@ -39,6 +39,7 @@ void URogueLikeStaminaComponent::BeginPlay()
     Owner = Cast<ARogueLikeCharacter>(GetOwner());
     check(Owner);
 
+    Owner->OnCharacterDataInit.AddDynamic(this, &ThisClass::OnCharacterDataInit);
     Owner->OnPassiveCharacteristicUpdated.AddDynamic(this, &ThisClass::UpdateRegenerationRate);
 }
 
@@ -75,4 +76,10 @@ void URogueLikeStaminaComponent::SetStamina(const float NewStamina)
 
     Stamina = FMath::Clamp(NewStamina, 0.0f, Owner->GetMaxStamina());
     OnStaminaUpdate.Broadcast();
+}
+
+void URogueLikeStaminaComponent::OnCharacterDataInit()
+{
+    check(Owner);
+    SetStamina(Owner->GetMaxStamina());
 }

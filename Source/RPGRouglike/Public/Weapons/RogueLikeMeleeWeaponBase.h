@@ -26,6 +26,7 @@ protected:
     virtual void BeginPlay() override;
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
     UBoxComponent* CollisionMesh;
+
     UPROPERTY(VisibleDefaultsOnly, Category = "Weapon")
     URogueLikeWeaponFXComponent* FXComponent;
 
@@ -39,11 +40,11 @@ private:
     UFUNCTION()
     void OnBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp,
         int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-    UPROPERTY()
-    UNiagaraComponent* TraceFXComponent;
-    void InitTraceFX();
-    void SetTraceFXVisibility(bool bVisible);
+    // UPROPERTY()
+    // UNiagaraComponent* TraceFXComponent;
+    // void InitTraceFX();
+    // void SetTraceFXVisibility(bool bVisible);
 
     AController* GetController() const;
-    UNiagaraComponent* SpawnTraceFX();
+    // UNiagaraComponent* SpawnTraceFX();
 };

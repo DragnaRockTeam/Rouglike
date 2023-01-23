@@ -19,12 +19,12 @@ public:
 protected:
     USceneComponent* RootComponent;
     virtual void BeginPlay() override;
-    FWeaponData WeaponData;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
     USkeletalMeshComponent* WeaponMesh;
 
     FAttackData AttackData;
+    FWeaponData WeaponData;
 
 private:
     void Init(FWeaponData InitData) { WeaponData = InitData; }

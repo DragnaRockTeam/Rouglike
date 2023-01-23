@@ -26,51 +26,54 @@ ARogueLikeCharacter::ARogueLikeCharacter(const FObjectInitializer& ObjInit)
     WeaponComponent = CreateDefaultSubobject<URogueLikeWeaponComponent>("WeaponComponent");
 }
 
-void ARogueLikeCharacter::AddPassiveCharacteristic(const FPassiveCharacteristic* AddCharacteristic)
+void ARogueLikeCharacter::AddPassiveCharacteristic(FPassiveCharacteristic& AddCharacteristic)
 {
-    PassiveCharacteristic->MaxHealth = FMath::Clamp(PassiveCharacteristic->MaxHealth + AddCharacteristic->MaxHealth, 1.0f, 10000.0f);
-    PassiveCharacteristic->MaxStamina = FMath::Clamp(PassiveCharacteristic->MaxStamina + AddCharacteristic->MaxStamina, 1.0f, 10000.0f);
+    PassiveCharacteristic.MaxHealth = FMath::Clamp(PassiveCharacteristic.MaxHealth + AddCharacteristic.MaxHealth, 1.0f, 10000.0f);
+    PassiveCharacteristic.MaxStamina = FMath::Clamp(PassiveCharacteristic.MaxStamina + AddCharacteristic.MaxStamina, 1.0f, 10000.0f);
 
-    PassiveCharacteristic->AttackSpeed = FMath::Clamp(PassiveCharacteristic->AttackSpeed + AddCharacteristic->AttackSpeed, 1.0f, 10.0f);
-    PassiveCharacteristic->Damage = FMath::Clamp(PassiveCharacteristic->Damage + AddCharacteristic->Damage, 0.0f, 10000.f);
-    PassiveCharacteristic->DamageResistance = FMath::Clamp(PassiveCharacteristic->AttackSpeed + AddCharacteristic->AttackSpeed, 0.0f, 1.0f);
+    PassiveCharacteristic.AttackSpeed = FMath::Clamp(PassiveCharacteristic.AttackSpeed + AddCharacteristic.AttackSpeed, 1.0f, 10.0f);
+    PassiveCharacteristic.Damage = FMath::Clamp(PassiveCharacteristic.Damage + AddCharacteristic.Damage, 0.0f, 10000.f);
+    PassiveCharacteristic.DamageResistance = FMath::Clamp(PassiveCharacteristic.AttackSpeed + AddCharacteristic.AttackSpeed, 0.0f, 1.0f);
 
-    PassiveCharacteristic->HealthRegeneration =
-        FMath::Clamp(PassiveCharacteristic->HealthRegeneration + AddCharacteristic->HealthRegeneration, 0.0f, 100.0f);
-    PassiveCharacteristic->StaminaRegeneration =
-        FMath::Clamp(PassiveCharacteristic->StaminaRegeneration + AddCharacteristic->StaminaRegeneration, 0.0f, 100.0f);
-    PassiveCharacteristic->MovementSpeed =
-        FMath::Clamp(PassiveCharacteristic->MovementSpeed + AddCharacteristic->MovementSpeed, 1.0f, 10.0f);
+    PassiveCharacteristic.HealthRegeneration =
+        FMath::Clamp(PassiveCharacteristic.HealthRegeneration + AddCharacteristic.HealthRegeneration, 0.0f, 100.0f);
+    PassiveCharacteristic.StaminaRegeneration =
+        FMath::Clamp(PassiveCharacteristic.StaminaRegeneration + AddCharacteristic.StaminaRegeneration, 0.0f, 100.0f);
+    PassiveCharacteristic.MovementSpeed = FMath::Clamp(PassiveCharacteristic.MovementSpeed + AddCharacteristic.MovementSpeed, 1.0f, 10.0f);
 
-    for (const auto& EffectPair : PassiveCharacteristic->EffectChances)
+    for (const auto& EffectPair : PassiveCharacteristic.EffectChances)
     {
-        PassiveCharacteristic->EffectChances[EffectPair.Key] =
-            FMath::Clamp(EffectPair.Value + AddCharacteristic->EffectChances[EffectPair.Key], 0, 100);
+        PassiveCharacteristic.EffectChances[EffectPair.Key] =
+            FMath::Clamp(EffectPair.Value + AddCharacteristic.EffectChances[EffectPair.Key], 0, 100);
     }
-    for (const auto& EffectPair : PassiveCharacteristic->EffectsDamages)
+    for (const auto& EffectPair : PassiveCharacteristic.EffectsDamages)
     {
-        PassiveCharacteristic->EffectsDamages[EffectPair.Key] =
-            FMath::Clamp(EffectPair.Value + AddCharacteristic->EffectsDamages[EffectPair.Key], 0.0f, 10000.0f);
+        PassiveCharacteristic.EffectsDamages[EffectPair.Key] =
+            FMath::Clamp(EffectPair.Value + AddCharacteristic.EffectsDamages[EffectPair.Key], 0.0f, 10000.0f);
     }
 
-    PassiveCharacteristic->ProjectileSpeed =
-        FMath::Clamp(PassiveCharacteristic->ProjectileSpeed + AddCharacteristic->ProjectileSpeed, 1.0f, 10000.0f);
-    PassiveCharacteristic->ReducingSkillsCooldownTime += AddCharacteristic->ReducingSkillsCooldownTime;
+    PassiveCharacteristic.ProjectileSpeed =
+        FMath::Clamp(PassiveCharacteristic.ProjectileSpeed + AddCharacteristic.ProjectileSpeed, 1.0f, 10000.0f);
+    PassiveCharacteristic.ReducingSkillsCooldownTime += AddCharacteristic.ReducingSkillsCooldownTime;
 
+    checkf(CheckPassiveCharacteristic(PassiveCharacteristic), TEXT("PassiveCharacteristic is not valid"));
     OnPassiveCharacteristicUpdated.Broadcast();
-    checkf(CheckPassiveCharacteristic(*PassiveCharacteristic), TEXT("PassiveCharacteristic is not valid"));
 }
 
 void ARogueLikeCharacter::InitCharacterData()
 {
+    if (!&CharacterData || !GetWorld()) return;  // if CharacterData is already installed, we terminate the function, or World doesn't exist
+
     const auto GameInst = Cast<URogueLikeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
     checkf(GameInst, TEXT("GameInst is not valid. GameInst should be child of URogueLikeGameInstance"));
-    CharacterData = GameInst->GetCharacterData();
-    check(CharacterData);
-    PassiveCharacteristic = &CharacterData->StartCharacteristic;
 
-    GetMesh()->SetSkeletalMesh(CharacterData->SkeletalMesh);
-    GetMesh()->SetAnimInstanceClass(CharacterData->AnimationClass);
+    CharacterData = *CharacterDataTable->FindRow<FCharacterData>(GameInst->GetCharacterDataRowName(), TEXT("Character data context"));
+
+    PassiveCharacteristic = CharacterData.StartCharacteristic;
+
+    GetMesh()->SetSkeletalMesh(CharacterData.SkeletalMesh);
+    GetMesh()->SetAnimInstanceClass(CharacterData.AnimationClass);
+    OnCharacterDataInit.Broadcast();
 }
 
 void ARogueLikeCharacter::BeginPlay()
@@ -79,10 +82,8 @@ void ARogueLikeCharacter::BeginPlay()
     InitCharacterData();
 
     UE_LOG(LogCharacter, All, TEXT("%s has valid characteristic: %s"), *GetName(),
-        (CheckPassiveCharacteristic(*PassiveCharacteristic) ? TEXT("true") : TEXT("false")));
+        (CheckPassiveCharacteristic(PassiveCharacteristic) ? TEXT("true") : TEXT("false")));
 
-    HealthComponent->SetHealth(GetMaxHealth());
-    StaminaComponent->SetStamina(GetMaxStamina());
     HealthComponent->OnDeath.AddDynamic(this, &ThisClass::OnDeath);
 }
 
@@ -97,6 +98,11 @@ void ARogueLikeCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
     PlayerInputComponent->BindAxis("MoveForward", this, &ThisClass::MoveForward);
     PlayerInputComponent->BindAxis("MoveRight", this, &ThisClass::MoveRight);
+}
+
+UMaterialInterface* ARogueLikeCharacter::GetTrailMaterial() const
+{
+    return WeaponComponent ? WeaponComponent->GetTrailMaterial() : nullptr;
 }
 
 void ARogueLikeCharacter::MoveForward(float Value)

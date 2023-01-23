@@ -74,5 +74,7 @@ private:
     void StaminaRegeneration();
     void StaminaConsumption();
     void SetStamina(const float NewStamina);
-    friend class ARogueLikeCharacter;
+
+    UFUNCTION()
+    void OnCharacterDataInit();
 };

@@ -20,6 +20,7 @@ void URogueLikeHealthComponent::BeginPlay()
     Owner = Cast<ARogueLikeCharacter>(GetOwner());
     check(Owner);
 
+    Owner->OnCharacterDataInit.AddDynamic(this, &ThisClass::OnCharacterDataInit);
     Owner->OnTakeAnyDamage.AddDynamic(this, &ThisClass::OnTakeAnyDamageHandle);
     Owner->OnPassiveCharacteristicUpdated.AddDynamic(this, &ThisClass::UpdateHealRate);
 }
@@ -62,6 +63,12 @@ void URogueLikeHealthComponent::SetHealth(float NewHealth)
 
     Health = NextHealth;
     OnHealthUpdate.Broadcast();
+}
+
+void URogueLikeHealthComponent::OnCharacterDataInit()
+{
+    check(Owner);
+    SetHealth(Owner->GetMaxHealth());
 }
 
 bool URogueLikeHealthComponent::IsHealthFull() const

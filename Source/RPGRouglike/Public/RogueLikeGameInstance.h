@@ -21,16 +21,10 @@ public:
     void SetCharacterDataRowName(FName SetCharacterDataRowName) { CharacterDataRowName = SetCharacterDataRowName; }
     FName GetCharacterDataRowName() const { return CharacterDataRowName; }
 
-    FCharacterData* GetCharacterData() const;
-
 protected:
     virtual void Init() override;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Data Table")
-    UDataTable* CharacterDataTable;
 
 private:
     int32 WeaponLevel = 1;
     FName CharacterDataRowName = FName("Default");
-    FCharacterData* CharacterData;
 };

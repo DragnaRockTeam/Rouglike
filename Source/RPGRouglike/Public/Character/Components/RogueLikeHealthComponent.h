@@ -57,5 +57,7 @@ private:
 
     void HealUpdate();
     void SetHealth(float NewHealth);
-    friend class ARogueLikeCharacter;
+
+    UFUNCTION()
+    void OnCharacterDataInit();
 };
